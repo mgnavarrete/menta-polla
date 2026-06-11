@@ -33,7 +33,6 @@ export default function Nav({
 
   return (
     <header className="border-b border-border bg-surface/90 backdrop-blur sticky top-0 z-20">
-      <div className="wc-bar" />
       <div className="mx-auto max-w-5xl px-3 sm:px-4">
         {/* fila 1: marca + usuario */}
         <div className="flex items-center justify-between py-2.5">

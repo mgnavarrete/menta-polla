@@ -124,27 +124,6 @@ body::before {
 /* ===== Temática mundialera ===== */
 
 /* barra de colores animada (espectro estilo Mundial) arriba del nav */
-.wc-bar {
-  height: 4px;
-  width: 100%;
-  background: linear-gradient(
-    90deg,
-    #10b981,
-    #06b6d4,
-    #3b82f6,
-    #db2777,
-    #f59e0b,
-    #10b981
-  );
-  background-size: 300% 100%;
-  animation: wcSlide 8s linear infinite;
-}
-@keyframes wcSlide {
-  to {
-    background-position: 300% 0;
-  }
-}
-
 /* elementos flotantes del fondo (pelotas, copas, confeti) */
 .wc-backdrop {
   position: fixed;
@@ -177,7 +156,6 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wc-bar,
   .wc-float {
     animation: none;
   }
