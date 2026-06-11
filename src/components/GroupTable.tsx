@@ -5,14 +5,23 @@ import Flag from "./Flag";
 export default function GroupTable({
   letter,
   rows,
+  caption,
 }: {
   letter: string;
   rows: { team: TeamView; row: GroupRow }[];
+  caption?: string;
 }) {
   return (
     <div className="card p-3">
-      <h3 className="font-bold mb-2 text-sm">
-        Grupo <span className="text-accent">{letter}</span>
+      <h3 className="font-bold mb-2 text-sm flex items-center justify-between gap-2">
+        <span>
+          Grupo <span className="text-accent">{letter}</span>
+        </span>
+        {caption && (
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+            {caption}
+          </span>
+        )}
       </h3>
       <table className="w-full text-xs">
         <thead>

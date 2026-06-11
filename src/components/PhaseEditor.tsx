@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MatchView, TeamView } from "@/lib/data";
-import type { GroupRow } from "@/lib/bracket";
+import { groupStandings, type GroupRow } from "@/lib/bracket";
 import MatchCard, { type CardValue } from "./MatchCard";
 import GroupTable from "./GroupTable";
 
@@ -157,12 +157,39 @@ export default function PhaseEditor({
         <div className="flex flex-col gap-8">
           {groups.map((g) => {
             const gm = matches.filter((m) => m.groupName === g.letter);
+            // Tabla de predicción: misma lógica que la real, pero con TUS
+            // marcadores (los inputs en vivo). Se actualiza al escribir.
+            const teamIds = g.standings.map((s) => s.team.id);
+            const teamViews = new Map(g.standings.map((s) => [s.team.id, s.team]));
+            const predRows = groupStandings(
+              teamIds,
+              gm.map((m) => {
+                const v = values[m.id];
+                return {
+                  homeTeamId: m.home?.id ?? null,
+                  awayTeamId: m.away?.id ?? null,
+                  homeGoals: v && v.home !== "" ? Number(v.home) : null,
+                  awayGoals: v && v.away !== "" ? Number(v.away) : null,
+                };
+              })
+            ).map((row) => ({ team: teamViews.get(row.teamId)!, row }));
             return (
               <section
                 key={g.letter}
                 className="grid lg:grid-cols-[260px_1fr] gap-4"
               >
-                <GroupTable letter={g.letter} rows={g.standings} />
+                <div className="flex flex-col gap-3">
+                  <GroupTable
+                    letter={g.letter}
+                    rows={predRows}
+                    caption="Tu predicción"
+                  />
+                  <GroupTable
+                    letter={g.letter}
+                    rows={g.standings}
+                    caption="Resultados"
+                  />
+                </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {gm.map(renderCard)}
                 </div>
