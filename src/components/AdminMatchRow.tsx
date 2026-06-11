@@ -85,6 +85,7 @@ export default function AdminMatchRow({
           #{match.matchNo} ·{" "}
           {match.groupName ? `Grupo ${match.groupName}` : match.slotLabel} ·{" "}
           {new Date(match.kickoff).toLocaleDateString("es-CL", {
+            timeZone: "America/Santiago",
             day: "2-digit",
             month: "short",
           })}

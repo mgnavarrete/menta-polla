@@ -12,6 +12,7 @@ export type CardValue = {
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("es-CL", {
+    timeZone: "America/Santiago",
     weekday: "short",
     day: "2-digit",
     month: "short",
