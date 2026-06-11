@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "./db";
+import { PHASES, PHASE_LABEL } from "./bracket";
 
 export type TeamView = {
   id: number;
@@ -169,4 +170,45 @@ export async function getLeaderboard(): Promise<LeaderRow[]> {
   });
   rows.sort((a, b) => b.total - a.total || b.exactHits - a.exactHits);
   return rows;
+}
+
+// Fase "en juego" ahora mismo: la primera (en orden) con partidos no finalizados.
+// Devuelve null si el torneo ya terminó.
+export async function getCurrentPhase(): Promise<string | null> {
+  for (const phase of PHASES) {
+    const unfinished = await prisma.match.count({
+      where: { phase, status: { not: "FINISHED" } },
+    });
+    if (unfinished > 0) return phase;
+  }
+  return null;
+}
+
+// Progreso de cada jugador en la fase actual: quiénes cerraron su apuesta y
+// quiénes tienen al menos un borrador (predicciones cargadas, sin cerrar).
+export type PhaseProgress = {
+  phase: string | null;
+  phaseLabel: string;
+  lockedIds: number[]; // cerraron la apuesta de la fase
+  draftedIds: number[]; // tienen predicciones de la fase (incluye cerrados)
+};
+
+export async function getPhaseProgress(): Promise<PhaseProgress> {
+  const phase = await getCurrentPhase();
+  if (!phase)
+    return { phase: null, phaseLabel: "", lockedIds: [], draftedIds: [] };
+  const [subs, preds] = await Promise.all([
+    prisma.phaseSubmission.findMany({ where: { phase }, select: { userId: true } }),
+    prisma.prediction.findMany({
+      where: { match: { phase } },
+      select: { userId: true },
+      distinct: ["userId"],
+    }),
+  ]);
+  return {
+    phase,
+    phaseLabel: PHASE_LABEL[phase] ?? phase,
+    lockedIds: subs.map((s) => s.userId),
+    draftedIds: preds.map((p) => p.userId),
+  };
 }

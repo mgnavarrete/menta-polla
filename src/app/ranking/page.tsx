@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/auth";
-import { getLeaderboard, getMatchViews, getPozo } from "@/lib/data";
+import { getLeaderboard, getMatchViews, getPozo, getPhaseProgress } from "@/lib/data";
 import { SCORING } from "@/lib/scoring";
 import Leaderboard from "@/components/Leaderboard";
 import Pozo from "@/components/Pozo";
@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 
 export default async function RankingPage() {
   const session = await requireSession();
-  const [board, matches, pozo] = await Promise.all([
+  const [board, matches, pozo, progress] = await Promise.all([
     getLeaderboard(),
     getMatchViews(session.userId, {}),
     getPozo(),
+    getPhaseProgress(),
   ]);
 
   const finished = matches
@@ -60,7 +61,7 @@ export default async function RankingPage() {
         </p>
       </section>
 
-      <Leaderboard rows={board} meId={session.userId} />
+      <Leaderboard rows={board} meId={session.userId} progress={progress} />
 
       <section>
         <h2 className="text-lg font-bold mb-3">Partidos finalizados</h2>

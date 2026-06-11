@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/auth";
-import { getLeaderboard, getMatchViews, getPozo } from "@/lib/data";
+import { getLeaderboard, getMatchViews, getPozo, getPhaseProgress } from "@/lib/data";
 import Leaderboard from "@/components/Leaderboard";
 import MisApuestas from "@/components/MisApuestas";
 
@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await requireSession();
-  const [board, matches, pozo] = await Promise.all([
+  const [board, matches, pozo, progress] = await Promise.all([
     getLeaderboard(),
     getMatchViews(session.userId, {}),
     getPozo(),
+    getPhaseProgress(),
   ]);
 
   const me = board.find((r) => r.userId === session.userId);
@@ -66,7 +67,7 @@ export default async function Home() {
 
       <section>
         <h2 className="text-lg font-bold mb-3">Tabla de posiciones</h2>
-        <Leaderboard rows={board} meId={session.userId} />
+        <Leaderboard rows={board} meId={session.userId} progress={progress} />
       </section>
 
       <section>
