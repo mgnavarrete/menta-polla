@@ -127,6 +127,7 @@ export type LeaderRow = {
   groupPoints: number;
   koPoints: number;
   exactHits: number;
+  outcomeHits: number; // partidos donde acertó el resultado (ganador/empate)
 };
 
 // Tabla de posiciones de los jugadores.
@@ -139,18 +140,32 @@ export async function getLeaderboard(): Promise<LeaderRow[]> {
     let groupPoints = 0;
     let koPoints = 0;
     let exactHits = 0;
+    let outcomeHits = 0;
     for (const p of u.predictions) {
       total += p.points;
       if (p.match.phase === "GROUP") groupPoints += p.points;
       else koPoints += p.points;
-      if (
+      const finished =
         p.match.status === "FINISHED" &&
-        p.match.homeGoals === p.homeGoals &&
-        p.match.awayGoals === p.awayGoals
-      )
-        exactHits++;
+        p.match.homeGoals != null &&
+        p.match.awayGoals != null;
+      if (finished) {
+        if (p.match.homeGoals === p.homeGoals && p.match.awayGoals === p.awayGoals)
+          exactHits++;
+        const guess = Math.sign(p.homeGoals - p.awayGoals);
+        const actual = Math.sign(p.match.homeGoals! - p.match.awayGoals!);
+        if (guess === actual) outcomeHits++;
+      }
     }
-    return { userId: u.id, name: u.name, total, groupPoints, koPoints, exactHits };
+    return {
+      userId: u.id,
+      name: u.name,
+      total,
+      groupPoints,
+      koPoints,
+      exactHits,
+      outcomeHits,
+    };
   });
   rows.sort((a, b) => b.total - a.total || b.exactHits - a.exactHits);
   return rows;

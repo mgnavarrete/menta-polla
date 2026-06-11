@@ -2,7 +2,6 @@ import { requireSession } from "@/lib/auth";
 import { getLeaderboard, getMatchViews, getPozo } from "@/lib/data";
 import Leaderboard from "@/components/Leaderboard";
 import MisApuestas from "@/components/MisApuestas";
-import Pozo from "@/components/Pozo";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +35,25 @@ export default async function Home() {
         </p>
       </section>
 
-      <section className="grid grid-cols-3 gap-2 sm:gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="card p-3 sm:p-4 bg-accent-soft">
+          <div className="text-accent text-[11px] sm:text-xs font-semibold">
+            💰 Pozo
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-accent tabular-nums">
+            ${pozo.total.toLocaleString("es-CL")}
+          </div>
+        </div>
         <div className="card p-3 sm:p-4">
           <div className="text-muted text-[11px] sm:text-xs">Tus puntos</div>
           <div className="text-2xl sm:text-3xl font-extrabold text-accent">
             {me?.total ?? 0}
+          </div>
+        </div>
+        <div className="card p-3 sm:p-4">
+          <div className="text-muted text-[11px] sm:text-xs">Acertados</div>
+          <div className="text-2xl sm:text-3xl font-extrabold">
+            {me?.outcomeHits ?? 0}
           </div>
         </div>
         <div className="card p-3 sm:p-4">
@@ -49,15 +62,7 @@ export default async function Home() {
             {me?.exactHits ?? 0}
           </div>
         </div>
-        <div className="card p-3 sm:p-4">
-          <div className="text-muted text-[11px] sm:text-xs">Apuestas</div>
-          <div className="text-2xl sm:text-3xl font-extrabold">
-            {matches.filter((m) => m.myPred).length}
-          </div>
-        </div>
       </section>
-
-      <Pozo {...pozo} />
 
       <section>
         <h2 className="text-lg font-bold mb-3">Tabla de posiciones</h2>
