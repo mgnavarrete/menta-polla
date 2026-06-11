@@ -112,6 +112,14 @@ export async function getMatchViews(
   });
 }
 
+// Pozo acumulado: cuota por jugador registrado. Se lo lleva el ganador.
+export type Pozo = { cuota: number; jugadores: number; total: number };
+export async function getPozo(): Promise<Pozo> {
+  const cuota = Number(process.env.POZO_CUOTA ?? 5000) || 5000;
+  const jugadores = await prisma.user.count();
+  return { cuota, jugadores, total: cuota * jugadores };
+}
+
 export type LeaderRow = {
   userId: number;
   name: string;

@@ -1,15 +1,17 @@
 import { requireSession } from "@/lib/auth";
-import { getLeaderboard, getMatchViews } from "@/lib/data";
+import { getLeaderboard, getMatchViews, getPozo } from "@/lib/data";
 import Leaderboard from "@/components/Leaderboard";
 import MisApuestas from "@/components/MisApuestas";
+import Pozo from "@/components/Pozo";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await requireSession();
-  const [board, matches] = await Promise.all([
+  const [board, matches, pozo] = await Promise.all([
     getLeaderboard(),
     getMatchViews(session.userId, {}),
+    getPozo(),
   ]);
 
   const me = board.find((r) => r.userId === session.userId);
@@ -54,6 +56,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <Pozo {...pozo} />
 
       <section>
         <h2 className="text-lg font-bold mb-3">Tabla de posiciones</h2>

@@ -1,16 +1,18 @@
 import { requireSession } from "@/lib/auth";
-import { getLeaderboard, getMatchViews } from "@/lib/data";
+import { getLeaderboard, getMatchViews, getPozo } from "@/lib/data";
 import { SCORING } from "@/lib/scoring";
 import Leaderboard from "@/components/Leaderboard";
+import Pozo from "@/components/Pozo";
 import Flag from "@/components/Flag";
 
 export const dynamic = "force-dynamic";
 
 export default async function RankingPage() {
   const session = await requireSession();
-  const [board, matches] = await Promise.all([
+  const [board, matches, pozo] = await Promise.all([
     getLeaderboard(),
     getMatchViews(session.userId, {}),
+    getPozo(),
   ]);
 
   const finished = matches
@@ -28,6 +30,8 @@ export default async function RankingPage() {
           <b>{SCORING.advance}</b>.
         </p>
       </header>
+
+      <Pozo {...pozo} />
 
       <Leaderboard rows={board} meId={session.userId} />
 
