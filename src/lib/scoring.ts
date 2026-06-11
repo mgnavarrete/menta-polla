@@ -1,8 +1,10 @@
 // Reglas de puntaje de la polla. Ajusta estos valores y todo recalcula.
+// Modelo NO acumulativo por marcador: cada partido da SOLO el mayor de los dos
+// (o aciertas el exacto, o solo el ganador). En eliminatorias se suma aparte el
+// punto por "quién avanza".
 export const SCORING = {
-  outcome: 3, // acertar ganador o empate
-  exact: 5, // bonus por marcador exacto (adicional al outcome)
-  teamGoals: 1, // por cada equipo cuyo nº de goles achuntaste (hasta 2)
+  outcome: 2, // acertar solo quién gana o empata (sin el marcador exacto)
+  exact: 5, // acertar el marcador EXACTO (reemplaza a outcome, no se suma)
   advance: 2, // eliminatorias: acertar quién avanza a la siguiente ronda
 };
 
@@ -27,7 +29,6 @@ export type MatchResult = {
 export type PointsBreakdown = {
   total: number;
   outcome: number;
-  teamGoals: number;
   exact: number;
   advance: number;
 };
@@ -38,22 +39,24 @@ export function computePoints(
   pred: PredInput,
   match: MatchResult
 ): PointsBreakdown {
-  const empty = { total: 0, outcome: 0, teamGoals: 0, exact: 0, advance: 0 };
+  const empty = { total: 0, outcome: 0, exact: 0, advance: 0 };
   if (match.homeGoals == null || match.awayGoals == null) return empty;
 
   const b = { ...empty };
-  const actual = outcome(match.homeGoals, match.awayGoals);
-  const guess = outcome(pred.homeGoals, pred.awayGoals);
 
-  if (guess === actual) b.outcome = SCORING.outcome;
-  if (pred.homeGoals === match.homeGoals) b.teamGoals += SCORING.teamGoals;
-  if (pred.awayGoals === match.awayGoals) b.teamGoals += SCORING.teamGoals;
-  if (
-    pred.homeGoals === match.homeGoals &&
-    pred.awayGoals === match.awayGoals
+  // Marcador exacto y "quién ganó" son excluyentes: te llevas SOLO el mayor.
+  const isExact =
+    pred.homeGoals === match.homeGoals && pred.awayGoals === match.awayGoals;
+  if (isExact) {
+    b.exact = SCORING.exact; // 5
+  } else if (
+    outcome(pred.homeGoals, pred.awayGoals) ===
+    outcome(match.homeGoals, match.awayGoals)
   ) {
-    b.exact = SCORING.exact;
+    b.outcome = SCORING.outcome; // 2
   }
+
+  // Punto extra (solo eliminatorias) por acertar quién avanza.
   if (
     match.phase !== "GROUP" &&
     match.winnerTeamId != null &&
@@ -62,6 +65,6 @@ export function computePoints(
     b.advance = SCORING.advance;
   }
 
-  b.total = b.outcome + b.teamGoals + b.exact + b.advance;
+  b.total = b.outcome + b.exact + b.advance;
   return b;
 }

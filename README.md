@@ -62,12 +62,14 @@ npm run db:reset && npm run seed
 
 ### Puntaje (ajustable en `src/lib/scoring.ts`)
 
-| Concepto                             | Puntos |
-| ------------------------------------ | ------ |
-| Acertar resultado (ganador o empate) | 3      |
-| Marcador exacto (adicional)          | +5     |
-| Goles exactos de cada equipo (c/u)   | +1     |
-| Eliminatorias: acertar quién avanza  | +2     |
+No acumulativo por marcador: cada partido da **solo el mayor** de los dos
+(o el exacto, o solo el ganador).
+
+| Concepto                                    | Puntos |
+| ------------------------------------------- | ------ |
+| Marcador exacto                             | 5      |
+| Solo quién gana o empata (sin el exacto)    | 2      |
+| Eliminatorias: acertar quién avanza (extra) | +2     |
 
 ### Rol admin (`/admin`)
 

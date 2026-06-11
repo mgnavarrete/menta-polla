@@ -23,15 +23,42 @@ export default async function RankingPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-2xl font-extrabold">Ranking</h1>
-        <p className="text-muted mt-1 text-sm">
-          Puntaje: resultado <b>{SCORING.outcome}</b> · marcador exacto +
-          <b>{SCORING.exact}</b> · goles exactos por equipo +
-          <b>{SCORING.teamGoals}</b> c/u · acertar quién avanza +
-          <b>{SCORING.advance}</b>.
-        </p>
       </header>
 
       <Pozo {...pozo} />
+
+      <section className="card p-4">
+        <h2 className="font-bold text-sm mb-2.5">¿Cómo se ganan los puntos?</h2>
+        <ul className="text-sm flex flex-col gap-2">
+          <li className="flex items-center justify-between gap-3">
+            <span>
+              🎯 <b>Marcador exacto</b>{" "}
+              <span className="text-muted">(achuntar el resultado completo)</span>
+            </span>
+            <b className="text-accent whitespace-nowrap">{SCORING.exact} pts</b>
+          </li>
+          <li className="flex items-center justify-between gap-3">
+            <span>
+              ✅ <b>Solo quién gana o empata</b>{" "}
+              <span className="text-muted">(sin el marcador exacto)</span>
+            </span>
+            <b className="text-accent whitespace-nowrap">{SCORING.outcome} pts</b>
+          </li>
+          <li className="flex items-center justify-between gap-3">
+            <span>
+              🏆 <b>Eliminatorias:</b> acertar quién avanza{" "}
+              <span className="text-muted">(extra)</span>
+            </span>
+            <b className="text-accent whitespace-nowrap">+{SCORING.advance} pts</b>
+          </li>
+        </ul>
+        <p className="text-xs text-muted mt-3 border-t border-border pt-2.5">
+          No se suman: si achuntas el exacto ganas {SCORING.exact}, no{" "}
+          {SCORING.exact + SCORING.outcome}. Ej.: si el partido va <b>3-1</b> y
+          predijiste <b>1-0</b> ganas {SCORING.outcome} (acertaste el ganador); si
+          predijiste <b>3-1</b> ganas {SCORING.exact}.
+        </p>
+      </section>
 
       <Leaderboard rows={board} meId={session.userId} />
 
