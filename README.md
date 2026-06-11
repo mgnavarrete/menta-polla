@@ -119,6 +119,26 @@ NODE_ENV=production node .next/standalone/server.js   # escucha en PORT (default
 
 Detrás de tu dominio, apunta el proxy (Nginx/Caddy) al puerto del proceso.
 
+### Actualizar la página (deploy de cambios)
+
+Para subir cambios nuevos a un servidor ya configurado (corre como servicio
+`systemd` llamado `menta-polla`):
+
+```bash
+cd ~/menta-polla
+git pull
+npm ci
+npm run build
+# vuelve a copiar los estáticos junto al server standalone
+cp -r public .next/standalone/
+cp -r .next/static .next/standalone/.next/
+sudo systemctl restart menta-polla
+```
+
+> Si el cambio incluye una migración de base de datos, corre
+> `npx prisma migrate deploy` **antes** de `npm run build`. (No corras
+> `npm run seed`: borraría las predicciones.)
+
 > ⚠️ **Persistencia:** la base SQLite (`DATABASE_URL`) debe vivir en una ruta que
 > **no se borre en cada deploy** (ej. `/var/lib/polla/prod.db`), o perderás todas
 > las predicciones. Corre `npm run seed` **una sola vez**: vuelve a crear la base

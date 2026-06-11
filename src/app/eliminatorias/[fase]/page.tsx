@@ -29,8 +29,9 @@ export default async function EliminatoriasPage({
       <header>
         <h1 className="text-2xl font-extrabold">Eliminatorias</h1>
         <p className="text-muted mt-1 text-sm">
-          Cada ronda se habilita cuando termina la anterior. Edita la fase,
-          guarda una vez y los cruces se llenan con los resultados reales.
+          Cada ronda se habilita cuando termina la anterior. Edita y guarda tu
+          borrador, y cuando estés listo <b>Cierra la apuesta</b> para
+          bloquearla. Los cruces se llenan con los resultados reales.
         </p>
       </header>
 

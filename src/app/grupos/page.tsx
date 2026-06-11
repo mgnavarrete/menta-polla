@@ -42,8 +42,10 @@ export default async function GruposPage() {
       <header>
         <h1 className="text-2xl font-extrabold">Fase de grupos</h1>
         <p className="text-muted mt-1 text-sm">
-          Pulsa <b>Editar fase</b>, anota el marcador de cada partido y guarda.
-          Ojo: una vez que guardas la fase, no se puede volver a editar.
+          Pulsa <b>Editar fase</b>, anota el marcador de cada partido y{" "}
+          <b>Guarda</b> como borrador las veces que quieras. Cuando estés
+          seguro, pulsa <b>Cerrar apuesta</b>: ahí queda bloqueada y no se
+          puede volver a editar.
         </p>
       </header>
 

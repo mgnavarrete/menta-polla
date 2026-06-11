@@ -46,6 +46,9 @@ export default function PhaseEditor({
 
   const predictable = matches.filter((m) => m.home && m.away);
   const canEdit = !locked && predictable.length > 0;
+  // ¿Hay un borrador guardado (predicciones ya en BD pero fase aún abierta)?
+  const predictedCount = predictable.filter((m) => m.myPred).length;
+  const hasDraft = !locked && predictedCount > 0;
 
   function onChange(id: number, v: CardValue) {
     setValues((prev) => ({ ...prev, [id]: v }));
@@ -56,10 +59,12 @@ export default function PhaseEditor({
     return v && v.home !== "" && v.away !== "";
   }).length;
 
-  async function save() {
+  // lock=false -> guarda borrador (editable). lock=true -> cierra la apuesta.
+  async function save(lock: boolean) {
     if (
+      lock &&
       !window.confirm(
-        `Vas a guardar tus predicciones de ${phaseLabel}. Una vez guardadas NO podrás editarlas. ¿Continuar?`
+        `Vas a CERRAR tu apuesta de ${phaseLabel}. Una vez cerrada NO podrás editarla. ¿Continuar?`
       )
     )
       return;
@@ -77,7 +82,7 @@ export default function PhaseEditor({
     const res = await fetch("/api/phase/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phase, predictions }),
+      body: JSON.stringify({ phase, predictions, lock }),
     });
     setBusy(false);
     if (res.ok) {
@@ -110,11 +115,14 @@ export default function PhaseEditor({
         <div className="text-sm">
           {locked ? (
             <span className="inline-flex items-center gap-1.5 text-accent font-semibold">
-              ✓ Fase guardada · no editable
+              ✓ Apuesta cerrada · no editable
             </span>
           ) : editing ? (
+            <span className="text-muted">Editando tus predicciones…</span>
+          ) : hasDraft ? (
             <span className="text-muted">
-              Editando tus predicciones…
+              📝 Borrador guardado (<b className="text-foreground">{predictedCount}</b>/
+              {predictable.length}). Puedes seguir editando o cerrar la apuesta.
             </span>
           ) : (
             <span className="text-muted">
@@ -125,10 +133,22 @@ export default function PhaseEditor({
           )}
         </div>
 
-        {canEdit && !editing && (
-          <button className="btn text-sm" onClick={() => setEditing(true)}>
-            ✏️ Editar fase
-          </button>
+        {!editing && (
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <button
+                className={`btn text-sm ${hasDraft ? "btn-ghost" : ""}`}
+                onClick={() => setEditing(true)}
+              >
+                ✏️ {hasDraft ? "Seguir editando" : "Editar fase"}
+              </button>
+            )}
+            {hasDraft && (
+              <button className="btn text-sm" onClick={() => save(true)} disabled={busy}>
+                🔒 Cerrar apuesta
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -176,8 +196,19 @@ export default function PhaseEditor({
               >
                 Cancelar
               </button>
-              <button className="btn text-sm" onClick={save} disabled={busy}>
-                {busy ? "Guardando…" : "Guardar fase"}
+              <button
+                className="btn-ghost btn text-sm"
+                onClick={() => save(false)}
+                disabled={busy}
+              >
+                {busy ? "Guardando…" : "💾 Guardar"}
+              </button>
+              <button
+                className="btn text-sm"
+                onClick={() => save(true)}
+                disabled={busy}
+              >
+                🔒 Cerrar apuesta
               </button>
             </div>
           </div>

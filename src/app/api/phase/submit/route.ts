@@ -10,7 +10,9 @@ function asGoals(v: unknown): number | null {
   return n;
 }
 
-// Guarda TODAS las predicciones de una fase y la bloquea (no se puede reeditar).
+// Guarda las predicciones de una fase. Dos modos:
+//  - borrador (lock=false): guarda y se puede seguir editando.
+//  - cerrar apuesta (lock=true): guarda y bloquea la fase para siempre.
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) {
@@ -21,14 +23,16 @@ export async function POST(req: Request) {
   if (!PHASES.includes(phase as never)) {
     return NextResponse.json({ error: "Fase inválida" }, { status: 400 });
   }
+  // Por defecto cierra (compat); el editor manda lock=false para borrador.
+  const lock = body.lock !== false;
 
-  // ¿ya guardó esta fase?
+  // ¿ya cerró esta fase? Cerrada = no se toca más (ni borrador ni cierre).
   const already = await prisma.phaseSubmission.findUnique({
     where: { userId_phase: { userId: session.userId, phase } },
   });
   if (already) {
     return NextResponse.json(
-      { error: "Esta fase ya fue guardada y no se puede editar" },
+      { error: "Esta apuesta ya fue cerrada y no se puede editar" },
       { status: 403 }
     );
   }
@@ -71,12 +75,14 @@ export async function POST(req: Request) {
     if (match.status === "FINISHED") finishedTouched.push(matchId);
   }
 
-  // bloquea la fase
-  await prisma.phaseSubmission.create({
-    data: { userId: session.userId, phase },
-  });
+  // bloquea la fase solo si se está cerrando la apuesta
+  if (lock) {
+    await prisma.phaseSubmission.create({
+      data: { userId: session.userId, phase },
+    });
+  }
 
   for (const id of finishedTouched) await recomputeMatchPoints(id);
 
-  return NextResponse.json({ ok: true, saved });
+  return NextResponse.json({ ok: true, saved, locked: lock });
 }
