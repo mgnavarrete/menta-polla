@@ -3,26 +3,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { MatchView } from "@/lib/data";
-import { byKickoff, dayKey, groupByDate, todayKey } from "@/lib/dates";
+import { byKickoff, dayKey, groupByDate } from "@/lib/dates";
 import MatchCard from "./MatchCard";
 
 const MIN_VISIBLE = 6; // partidos mínimos a mostrar en la vista resumida
 
-export default function MisApuestas({ matches }: { matches: MatchView[] }) {
+export default function MisApuestas({
+  matches,
+  today,
+}: {
+  matches: MatchView[];
+  today: string; // clave YYYY-MM-DD del día de hoy (calculada en el server)
+}) {
   const [showAll, setShowAll] = useState(false);
 
   if (!showAll) {
-    const now = Date.now();
-    const today = todayKey();
-
     // partidos de hoy
     const todays = matches
       .filter((m) => dayKey(m.kickoff) === today)
       .sort(byKickoff);
 
-    // próximos (futuros, no de hoy) para rellenar si queda espacio
+    // próximos (días futuros) para rellenar si queda espacio. dayKey es
+    // YYYY-MM-DD, así que comparar como texto equivale a comparar fechas.
     const upcoming = matches
-      .filter((m) => dayKey(m.kickoff) !== today && +new Date(m.kickoff) > now)
+      .filter((m) => dayKey(m.kickoff) > today)
       .sort(byKickoff);
 
     const fill = upcoming.slice(0, Math.max(0, MIN_VISIBLE - todays.length));

@@ -105,12 +105,19 @@ export default function MatchCard({
     Math.sign(mp.homeGoals - mp.awayGoals) ===
       Math.sign(match.homeGoals! - match.awayGoals!);
 
-  const advTeam =
-    mp?.advanceTeamId === match.home?.id
+  // Quién avanza según tu predicción: si marcaste empate, el que elegiste por
+  // penales; si predijiste un ganador, ese equipo (avance implícito).
+  const advTeam = !mp
+    ? null
+    : mp.advanceTeamId === match.home?.id
       ? match.home
-      : mp?.advanceTeamId === match.away?.id
+      : mp.advanceTeamId === match.away?.id
         ? match.away
-        : null;
+        : mp.homeGoals > mp.awayGoals
+          ? match.home
+          : mp.awayGoals > mp.homeGoals
+            ? match.away
+            : null;
 
   // marco de la tarjeta según el acierto (solo en lectura y partido jugado)
   const cardRing =

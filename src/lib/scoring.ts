@@ -24,6 +24,8 @@ export type MatchResult = {
   homeGoals: number | null;
   awayGoals: number | null;
   winnerTeamId: number | null;
+  homeTeamId?: number | null;
+  awayTeamId?: number | null;
 };
 
 export type PointsBreakdown = {
@@ -57,12 +59,20 @@ export function computePoints(
   }
 
   // Punto extra (solo eliminatorias) por acertar quién avanza.
-  if (
-    match.phase !== "GROUP" &&
-    match.winnerTeamId != null &&
-    pred.advanceTeamId === match.winnerTeamId
-  ) {
-    b.advance = SCORING.advance;
+  // Si el usuario marcó explícitamente a quién hace avanzar (empate -> penales),
+  // se usa eso. Si predijo un marcador decisivo, el equipo que "gana" en su
+  // predicción cuenta como su avance implícito.
+  if (match.phase !== "GROUP" && match.winnerTeamId != null) {
+    const predictedAdvancer =
+      pred.advanceTeamId ??
+      (pred.homeGoals > pred.awayGoals
+        ? match.homeTeamId ?? null
+        : pred.awayGoals > pred.homeGoals
+          ? match.awayTeamId ?? null
+          : null);
+    if (predictedAdvancer != null && predictedAdvancer === match.winnerTeamId) {
+      b.advance = SCORING.advance;
+    }
   }
 
   b.total = b.outcome + b.exact + b.advance;

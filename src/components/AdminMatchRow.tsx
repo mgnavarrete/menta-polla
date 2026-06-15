@@ -30,6 +30,16 @@ export type AdminMatch = {
   winnerTeamId: number | null;
 };
 
+// Sugerencia de equipos para un lado del cruce de 16avos, derivada de la tabla
+// final de grupos: teamId determinista a preseleccionar (o null) y los ids
+// ordenados para mostrar primero los más probables.
+export type SideSuggest = {
+  teamId: number | null;
+  preferredIds: number[];
+  label: string; // ej. "2º A" o "3º (A/B/C/D/F)"
+};
+export type MatchSuggest = { home: SideSuggest; away: SideSuggest };
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("es-CL", {
     timeZone: "America/Santiago",
@@ -73,9 +83,11 @@ function TeamRow({
 export default function AdminMatchRow({
   match,
   teams,
+  suggest,
 }: {
   match: AdminMatch;
   teams: TeamOpt[];
+  suggest?: MatchSuggest;
 }) {
   const router = useRouter();
   const isKO = match.phase !== "GROUP";
@@ -89,11 +101,21 @@ export default function AdminMatchRow({
     match.awayGoals != null ? String(match.awayGoals) : ""
   );
   const [winner, setWinner] = useState<number | null>(match.winnerTeamId);
+  // si el cruce aún no tiene equipo asignado, preselecciona la sugerencia
+  // determinista de la tabla final (1º/2º de grupo); los terceros quedan vacíos.
   const [aHome, setAHome] = useState<string>(
-    match.homeId != null ? String(match.homeId) : ""
+    match.homeId != null
+      ? String(match.homeId)
+      : suggest?.home.teamId != null
+        ? String(suggest.home.teamId)
+        : ""
   );
   const [aAway, setAAway] = useState<string>(
-    match.awayId != null ? String(match.awayId) : ""
+    match.awayId != null
+      ? String(match.awayId)
+      : suggest?.away.teamId != null
+        ? String(suggest.away.teamId)
+        : ""
   );
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -146,23 +168,49 @@ export default function AdminMatchRow({
 
       {/* Asignación de equipos en 16avos */}
       {isR32 && (
-        <div className="flex items-center gap-2 text-sm flex-wrap border-b border-border pb-3">
-          <TeamSelect value={aHome} onChange={setAHome} teams={teams} />
-          <span className="text-muted">vs</span>
-          <TeamSelect value={aAway} onChange={setAAway} teams={teams} />
-          <button
-            className="btn-ghost btn text-xs"
-            disabled={busy}
-            onClick={() =>
-              post("/api/admin/assign", {
-                matchId: match.id,
-                homeTeamId: aHome ? Number(aHome) : null,
-                awayTeamId: aAway ? Number(aAway) : null,
-              })
-            }
-          >
-            Asignar
-          </button>
+        <div className="flex flex-col gap-2 text-sm border-b border-border pb-3">
+          <div className="flex items-end gap-2 flex-wrap">
+            <div className="flex flex-col gap-0.5">
+              {suggest && (
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  {suggest.home.label}
+                </span>
+              )}
+              <TeamSelect
+                value={aHome}
+                onChange={setAHome}
+                teams={teams}
+                preferredIds={suggest?.home.preferredIds}
+              />
+            </div>
+            <span className="text-muted pb-1.5">vs</span>
+            <div className="flex flex-col gap-0.5">
+              {suggest && (
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  {suggest.away.label}
+                </span>
+              )}
+              <TeamSelect
+                value={aAway}
+                onChange={setAAway}
+                teams={teams}
+                preferredIds={suggest?.away.preferredIds}
+              />
+            </div>
+            <button
+              className="btn-ghost btn text-xs"
+              disabled={busy}
+              onClick={() =>
+                post("/api/admin/assign", {
+                  matchId: match.id,
+                  homeTeamId: aHome ? Number(aHome) : null,
+                  awayTeamId: aAway ? Number(aAway) : null,
+                })
+              }
+            >
+              Asignar
+            </button>
+          </div>
         </div>
       )}
 
@@ -241,11 +289,25 @@ function TeamSelect({
   value,
   onChange,
   teams,
+  preferredIds,
 }: {
   value: string;
   onChange: (v: string) => void;
   teams: TeamOpt[];
+  preferredIds?: number[];
 }) {
+  const byId = new Map(teams.map((t) => [t.id, t]));
+  const preferred = (preferredIds ?? [])
+    .map((id) => byId.get(id))
+    .filter((t): t is TeamOpt => !!t);
+  const preferredSet = new Set(preferred.map((t) => t.id));
+  const rest = teams.filter((t) => !preferredSet.has(t.id));
+  const opt = (t: TeamOpt) => (
+    <option key={t.id} value={t.id}>
+      {t.flag} {t.name} ({t.groupName})
+    </option>
+  );
+
   return (
     <select
       className="bg-surface-2 border border-border rounded-md px-2 py-1 text-xs max-w-[10rem]"
@@ -253,11 +315,16 @@ function TeamSelect({
       onChange={(e) => onChange(e.target.value)}
     >
       <option value="">— equipo —</option>
-      {teams.map((t) => (
-        <option key={t.id} value={t.id}>
-          {t.flag} {t.name} ({t.groupName})
-        </option>
-      ))}
+      {preferred.length > 0 ? (
+        <>
+          <optgroup label="Sugeridos (tabla final)">
+            {preferred.map(opt)}
+          </optgroup>
+          <optgroup label="Todos">{rest.map(opt)}</optgroup>
+        </>
+      ) : (
+        teams.map(opt)
+      )}
     </select>
   );
 }

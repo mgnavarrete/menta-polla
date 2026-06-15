@@ -20,6 +20,8 @@ export async function recomputeMatchPoints(matchId: number) {
         homeGoals: match.homeGoals,
         awayGoals: match.awayGoals,
         winnerTeamId: match.winnerTeamId,
+        homeTeamId: match.homeTeamId,
+        awayTeamId: match.awayTeamId,
       }
     );
     if (total !== p.points) {

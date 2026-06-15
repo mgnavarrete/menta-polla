@@ -1,5 +1,6 @@
 import { requireSession } from "@/lib/auth";
 import { getLeaderboard, getMatchViews, getPozo, getPhaseProgress } from "@/lib/data";
+import { todayKey } from "@/lib/dates";
 import Leaderboard from "@/components/Leaderboard";
 import MisApuestas from "@/components/MisApuestas";
 
@@ -72,7 +73,7 @@ export default async function Home() {
 
       <section>
         <h2 className="text-lg font-bold mb-3">Tus apuestas</h2>
-        <MisApuestas matches={matches} />
+        <MisApuestas matches={matches} today={todayKey()} />
       </section>
     </div>
   );

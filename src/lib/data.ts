@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "./db";
-import { PHASES, PHASE_LABEL } from "./bracket";
+import { PHASES, PHASE_LABEL, groupStandings } from "./bracket";
 
 export type TeamView = {
   id: number;
@@ -111,6 +111,75 @@ export async function getMatchViews(
       others,
     };
   });
+}
+
+// --- Tabla FINAL de la fase de grupos (para sugerir cruces de 16avos) ---
+export type StandingTeam = {
+  team: TeamView;
+  groupName: string;
+  position: number; // 1 = primero del grupo
+};
+export type FinalStandings = {
+  complete: boolean; // todos los partidos de grupos están finalizados
+  byGroup: Record<string, StandingTeam[]>; // ordenados 1º..4º
+  thirds: StandingTeam[]; // los terceros de cada grupo, rankeados (mejor primero)
+};
+
+// Calcula la tabla final de cada grupo y el ranking de terceros. Sirve para
+// que el admin asigne los 16avos con la tabla real ya ordenada delante.
+export async function getFinalStandings(): Promise<FinalStandings> {
+  const [teams, matches] = await Promise.all([
+    prisma.team.findMany(),
+    prisma.match.findMany({ where: { phase: "GROUP" } }),
+  ]);
+
+  const complete =
+    matches.length > 0 && matches.every((m) => m.status === "FINISHED");
+
+  const teamById = new Map<number, (typeof teams)[number]>(
+    teams.map((t) => [t.id, t])
+  );
+  const letters = [...new Set(teams.map((t) => t.groupName))].sort();
+
+  const byGroup: Record<string, StandingTeam[]> = {};
+  // guardamos el GroupRow del tercero para poder rankearlos entre grupos
+  const thirdRows: { st: StandingTeam; points: number; gd: number; gf: number }[] =
+    [];
+
+  for (const g of letters) {
+    const teamIds = teams.filter((t) => t.groupName === g).map((t) => t.id);
+    const rows = groupStandings(
+      teamIds,
+      matches
+        .filter((m) => m.groupName === g)
+        .map((m) => ({
+          homeTeamId: m.homeTeamId,
+          awayTeamId: m.awayTeamId,
+          homeGoals: m.homeGoals,
+          awayGoals: m.awayGoals,
+        }))
+    );
+    byGroup[g] = rows.map((row, i) => ({
+      team: teamView(teamById.get(row.teamId)!)!,
+      groupName: g,
+      position: i + 1,
+    }));
+    const third = rows[2];
+    if (third) {
+      thirdRows.push({
+        st: byGroup[g][2],
+        points: third.points,
+        gd: third.gd,
+        gf: third.gf,
+      });
+    }
+  }
+
+  thirdRows.sort(
+    (a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf
+  );
+
+  return { complete, byGroup, thirds: thirdRows.map((t) => t.st) };
 }
 
 // Pozo acumulado: cuota por jugador registrado. Se lo lleva el ganador.
