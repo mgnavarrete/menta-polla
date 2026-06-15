@@ -6,8 +6,6 @@ import type { MatchView } from "@/lib/data";
 import { byKickoff, dayKey, groupByDate } from "@/lib/dates";
 import MatchCard from "./MatchCard";
 
-const MIN_VISIBLE = 6; // partidos mínimos a mostrar en la vista resumida
-
 export default function MisApuestas({
   matches,
   today,
@@ -23,51 +21,29 @@ export default function MisApuestas({
       .filter((m) => dayKey(m.kickoff) === today)
       .sort(byKickoff);
 
-    // próximos (días futuros) para rellenar si queda espacio. dayKey es
-    // YYYY-MM-DD, así que comparar como texto equivale a comparar fechas.
-    const upcoming = matches
-      .filter((m) => dayKey(m.kickoff) > today)
-      .sort(byKickoff);
-
-    const fill = upcoming.slice(0, Math.max(0, MIN_VISIBLE - todays.length));
-
     return (
       <div className="flex flex-col gap-6">
-        {todays.length === 0 && fill.length === 0 ? (
+        {todays.length === 0 ? (
           <div className="card p-4 text-sm text-muted">
-            No hay partidos próximos.{" "}
+            Hoy no hay partidos.{" "}
             <Link href="/grupos" className="text-accent font-semibold">
               Revisa tus apuestas →
             </Link>
           </div>
         ) : (
-          <>
-            {todays.length > 0 && (
-              <section>
-                <h3 className="font-bold mb-2 flex items-center gap-2">
-                  <span className="text-accent">Hoy</span>
-                  <span className="text-xs font-normal text-muted">
-                    {todays.length} partido{todays.length > 1 ? "s" : ""}
-                  </span>
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {todays.map((m) => (
-                    <MatchCard key={m.id} match={m} />
-                  ))}
-                </div>
-              </section>
-            )}
-            {fill.length > 0 && (
-              <section>
-                <h3 className="font-bold mb-2 text-muted">Próximos partidos</h3>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {fill.map((m) => (
-                    <MatchCard key={m.id} match={m} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
+          <section>
+            <h3 className="font-bold mb-2 flex items-center gap-2">
+              <span className="text-accent">Partidos de hoy</span>
+              <span className="text-xs font-normal text-muted">
+                {todays.length} partido{todays.length > 1 ? "s" : ""}
+              </span>
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {todays.map((m) => (
+                <MatchCard key={m.id} match={m} />
+              ))}
+            </div>
+          </section>
         )}
         <div>
           <button
@@ -90,7 +66,7 @@ export default function MisApuestas({
           className="btn-ghost btn text-sm"
           onClick={() => setShowAll(false)}
         >
-          ← Volver a tus apuestas
+          ← Volver a los partidos
         </button>
       </div>
       {groups.map((g) => (

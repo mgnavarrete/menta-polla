@@ -72,7 +72,7 @@ export default async function Home() {
       </section>
 
       <section>
-        <h2 className="text-lg font-bold mb-3">Tus apuestas</h2>
+        <h2 className="text-lg font-bold mb-3">Partidos</h2>
         <MisApuestas matches={matches} today={todayKey()} />
       </section>
     </div>
