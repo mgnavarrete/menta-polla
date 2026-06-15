@@ -3,33 +3,67 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { MatchView } from "@/lib/data";
-import { PHASES, PHASE_LABEL } from "@/lib/bracket";
+import { byKickoff, dayKey, groupByDate, todayKey } from "@/lib/dates";
 import MatchCard from "./MatchCard";
+
+const MIN_VISIBLE = 6; // partidos mínimos a mostrar en la vista resumida
 
 export default function MisApuestas({ matches }: { matches: MatchView[] }) {
   const [showAll, setShowAll] = useState(false);
 
-  // apuestas hechas, en el orden en que se juegan los partidos
-  const bets = matches
-    .filter((m) => m.myPred)
-    .sort((a, b) => +new Date(a.kickoff) - +new Date(b.kickoff));
-
   if (!showAll) {
+    const now = Date.now();
+    const today = todayKey();
+
+    // partidos de hoy
+    const todays = matches
+      .filter((m) => dayKey(m.kickoff) === today)
+      .sort(byKickoff);
+
+    // próximos (futuros, no de hoy) para rellenar si queda espacio
+    const upcoming = matches
+      .filter((m) => dayKey(m.kickoff) !== today && +new Date(m.kickoff) > now)
+      .sort(byKickoff);
+
+    const fill = upcoming.slice(0, Math.max(0, MIN_VISIBLE - todays.length));
+
     return (
-      <div className="flex flex-col gap-3">
-        {bets.length === 0 ? (
+      <div className="flex flex-col gap-6">
+        {todays.length === 0 && fill.length === 0 ? (
           <div className="card p-4 text-sm text-muted">
-            Aún no has hecho apuestas.{" "}
+            No hay partidos próximos.{" "}
             <Link href="/grupos" className="text-accent font-semibold">
-              Ir a la fase de grupos →
+              Revisa tus apuestas →
             </Link>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {bets.slice(0, 6).map((m) => (
-              <MatchCard key={m.id} match={m} />
-            ))}
-          </div>
+          <>
+            {todays.length > 0 && (
+              <section>
+                <h3 className="font-bold mb-2 flex items-center gap-2">
+                  <span className="text-accent">Hoy</span>
+                  <span className="text-xs font-normal text-muted">
+                    {todays.length} partido{todays.length > 1 ? "s" : ""}
+                  </span>
+                </h3>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {todays.map((m) => (
+                    <MatchCard key={m.id} match={m} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {fill.length > 0 && (
+              <section>
+                <h3 className="font-bold mb-2 text-muted">Próximos partidos</h3>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {fill.map((m) => (
+                    <MatchCard key={m.id} match={m} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
         <div>
           <button
@@ -43,7 +77,8 @@ export default function MisApuestas({ matches }: { matches: MatchView[] }) {
     );
   }
 
-  // vista "todos los partidos por fase", en orden de juego
+  // vista "todos los partidos", agrupados por fecha (orden cronológico)
+  const groups = groupByDate(matches);
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -54,22 +89,16 @@ export default function MisApuestas({ matches }: { matches: MatchView[] }) {
           ← Volver a tus apuestas
         </button>
       </div>
-      {PHASES.map((phase) => {
-        const phaseMatches = matches
-          .filter((m) => m.phase === phase)
-          .sort((a, b) => a.matchNo - b.matchNo);
-        if (phaseMatches.length === 0) return null;
-        return (
-          <section key={phase}>
-            <h3 className="font-bold mb-2">{PHASE_LABEL[phase]}</h3>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {phaseMatches.map((m) => (
-                <MatchCard key={m.id} match={m} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {groups.map((g) => (
+        <section key={g.key}>
+          <h3 className="font-bold mb-2">{g.label}</h3>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {g.items.map((m) => (
+              <MatchCard key={m.id} match={m} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

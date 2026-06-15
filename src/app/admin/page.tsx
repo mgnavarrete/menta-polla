@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PHASE_LABEL, PHASES } from "@/lib/bracket";
+import { groupByDate } from "@/lib/dates";
 import AdminMatchRow, {
   type AdminMatch,
   type TeamOpt,
@@ -13,7 +13,7 @@ export default async function AdminPage() {
 
   const [matches, teams] = await Promise.all([
     prisma.match.findMany({
-      orderBy: { matchNo: "asc" },
+      orderBy: { kickoff: "asc" },
       include: { homeTeam: true, awayTeam: true },
     }),
     prisma.team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
@@ -56,20 +56,16 @@ export default async function AdminPage() {
         </p>
       </header>
 
-      {PHASES.map((phase) => {
-        const phaseRows = rows.filter((r) => r.phase === phase);
-        if (phaseRows.length === 0) return null;
-        return (
-          <section key={phase}>
-            <h2 className="text-lg font-bold mb-3">{PHASE_LABEL[phase]}</h2>
-            <div className="grid lg:grid-cols-2 gap-2.5">
-              {phaseRows.map((r) => (
-                <AdminMatchRow key={r.id} match={r} teams={teamOpts} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {groupByDate(rows).map((g) => (
+        <section key={g.key}>
+          <h2 className="text-lg font-bold mb-3">{g.label}</h2>
+          <div className="grid lg:grid-cols-2 gap-3">
+            {g.items.map((r) => (
+              <AdminMatchRow key={r.id} match={r} teams={teamOpts} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
