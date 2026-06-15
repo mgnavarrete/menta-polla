@@ -31,7 +31,7 @@ function ukToUtc(date: string, time: string): Date {
 
 type Fix =
   | { matchNo: number; date: string; ukTime: string; phase: "GROUP"; group: string; home: string; away: string }
-  | { matchNo: number; date: string; ukTime: string; phase: string; slot: string };
+  | { matchNo: number; date: string; ukTime: string; phase: "R32" | "R16" | "QF" | "SF" | "THIRD" | "FINAL"; slot: string };
 
 const FIXTURE: Fix[] = [
   { matchNo: 1, date: "2026-06-11", ukTime: "20:00", phase: "GROUP", group: "A", home: "México", away: "Sudáfrica" },
