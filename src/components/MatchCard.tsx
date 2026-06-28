@@ -119,6 +119,16 @@ export default function MatchCard({
             ? match.away
             : null;
 
+  // En eliminatorias, la "decisión de penales" de una predicción: solo tiene
+  // sentido mostrarla cuando se marcó empate (con ganador implícito el avance
+  // es redundante). Devuelve la sigla del equipo elegido por penales.
+  const penaltyCode = (homeGoals: number, awayGoals: number, advanceTeamId: number | null) => {
+    if (!isKO || homeGoals !== awayGoals) return undefined;
+    if (advanceTeamId === match.home?.id) return match.home?.code;
+    if (advanceTeamId === match.away?.id) return match.away?.code;
+    return undefined;
+  };
+
   // marco de la tarjeta según el acierto (solo en lectura y partido jugado)
   const cardRing =
     !editable && finished && mp
@@ -255,25 +265,31 @@ export default function MatchCard({
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
             Resto de la polla
           </span>
-          {match.others.map((o) => (
-            <div
-              key={o.userId}
-              className="flex items-center justify-between text-xs"
-            >
-              <span className="text-muted">{o.userName}</span>
-              <span>
-                <b className="text-foreground tabular-nums">
-                  {o.homeGoals}-{o.awayGoals}
-                </b>
-                {finished && (
-                  <span className="text-accent font-semibold">
-                    {" "}
-                    · {o.points} pts
-                  </span>
-                )}
-              </span>
-            </div>
-          ))}
+          {match.others.map((o) => {
+            const advCode = penaltyCode(o.homeGoals, o.awayGoals, o.advanceTeamId);
+            return (
+              <div
+                key={o.userId}
+                className="flex items-center justify-between text-xs"
+              >
+                <span className="text-muted">{o.userName}</span>
+                <span>
+                  <b className="text-foreground tabular-nums">
+                    {o.homeGoals}-{o.awayGoals}
+                  </b>
+                  {advCode && (
+                    <span className="text-muted"> · avanza {advCode}</span>
+                  )}
+                  {finished && (
+                    <span className="text-accent font-semibold">
+                      {" "}
+                      · {o.points} pts
+                    </span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
