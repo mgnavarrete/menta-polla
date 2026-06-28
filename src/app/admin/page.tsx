@@ -1,7 +1,9 @@
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getFinalStandings, type FinalStandings } from "@/lib/data";
+import { PHASES } from "@/lib/bracket";
 import AdminPhaseTabs from "@/components/AdminPhaseTabs";
+import AdminPhaseLocks, { type UserLocks } from "@/components/AdminPhaseLocks";
 import type {
   AdminMatch,
   MatchSuggest,
@@ -40,14 +42,25 @@ function sideSuggest(side: string, fs: FinalStandings): SideSuggest {
 export default async function AdminPage() {
   await requireAdmin();
 
-  const [matches, teams, standings] = await Promise.all([
+  const [matches, teams, standings, users] = await Promise.all([
     prisma.match.findMany({
       orderBy: { kickoff: "asc" },
       include: { homeTeam: true, awayTeam: true },
     }),
     prisma.team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
     getFinalStandings(),
+    prisma.user.findMany({
+      orderBy: { name: "asc" },
+      include: { phaseLocks: true },
+    }),
   ]);
+
+  // fases cerradas por cada usuario, ordenadas según el orden del torneo
+  const userLocks: UserLocks[] = users.map((u) => ({
+    userId: u.id,
+    name: u.name,
+    phases: PHASES.filter((p) => u.phaseLocks.some((l) => l.phase === p)),
+  }));
 
   const teamOpts: TeamOpt[] = teams.map((t) => ({
     id: t.id,
@@ -104,6 +117,8 @@ export default async function AdminPage() {
         suggestions={suggestions}
         standingsReady={standings.complete}
       />
+
+      <AdminPhaseLocks users={userLocks} />
     </div>
   );
 }
