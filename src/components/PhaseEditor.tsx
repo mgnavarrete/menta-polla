@@ -45,16 +45,19 @@ export default function PhaseEditor({
   const [msg, setMsg] = useState("");
 
   const predictable = matches.filter((m) => m.home && m.away);
-  const canEdit = !locked && predictable.length > 0;
+  // Solo se pueden anotar/editar partidos que aún NO empezaron. Un partido ya
+  // iniciado (m.locked) queda fijo aunque la fase siga abierta.
+  const editableMatches = predictable.filter((m) => !m.locked);
+  const canEdit = !locked && editableMatches.length > 0;
   // ¿Hay un borrador guardado (predicciones ya en BD pero fase aún abierta)?
-  const predictedCount = predictable.filter((m) => m.myPred).length;
+  const predictedCount = editableMatches.filter((m) => m.myPred).length;
   const hasDraft = !locked && predictedCount > 0;
 
   function onChange(id: number, v: CardValue) {
     setValues((prev) => ({ ...prev, [id]: v }));
   }
 
-  const filled = predictable.filter((m) => {
+  const filled = editableMatches.filter((m) => {
     const v = values[m.id];
     return v && v.home !== "" && v.away !== "";
   }).length;
@@ -70,7 +73,7 @@ export default function PhaseEditor({
       return;
     setBusy(true);
     setMsg("");
-    const predictions = predictable
+    const predictions = editableMatches
       .map((m) => ({ m, v: values[m.id] }))
       .filter(({ v }) => v && v.home !== "" && v.away !== "")
       .map(({ m, v }) => ({
@@ -101,7 +104,7 @@ export default function PhaseEditor({
       <MatchCard
         key={m.id}
         match={m}
-        editable={cardEditable && !!m.home && !!m.away}
+        editable={cardEditable && !!m.home && !!m.away && !m.locked}
         value={values[m.id]}
         onChange={(v) => onChange(m.id, v)}
       />
@@ -122,13 +125,15 @@ export default function PhaseEditor({
           ) : hasDraft ? (
             <span className="text-muted">
               📝 Borrador guardado (<b className="text-foreground">{predictedCount}</b>/
-              {predictable.length}). Puedes seguir editando o cerrar la apuesta.
+              {editableMatches.length}). Puedes seguir editando o cerrar la apuesta.
             </span>
           ) : (
             <span className="text-muted">
               {predictable.length === 0
                 ? "Aún no hay partidos para predecir."
-                : "Pulsa “Editar fase” para anotar tus predicciones."}
+                : editableMatches.length === 0
+                  ? "Los partidos de esta fase ya comenzaron; no se pueden editar."
+                  : "Pulsa “Editar fase” para anotar tus predicciones."}
             </span>
           )}
         </div>
@@ -208,7 +213,7 @@ export default function PhaseEditor({
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur">
           <div className="mx-auto max-w-5xl px-3 sm:px-4 py-3 flex items-center justify-between gap-3">
             <div className="text-sm text-muted">
-              <b className="text-foreground">{filled}</b>/{predictable.length}{" "}
+              <b className="text-foreground">{filled}</b>/{editableMatches.length}{" "}
               <span className="hidden min-[380px]:inline">completados</span>
               {msg && <span className="text-red-500 ml-2">{msg}</span>}
             </div>

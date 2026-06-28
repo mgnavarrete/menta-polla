@@ -45,6 +45,7 @@ export async function POST(req: Request) {
   const matches = await prisma.match.findMany({ where: { phase } });
   const byId = new Map(matches.map((m) => [m.id, m]));
 
+  const now = Date.now();
   let saved = 0;
   const finishedTouched: number[] = [];
   for (const raw of preds) {
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
     const matchId = Number(p.matchId);
     const match = byId.get(matchId);
     if (!match || match.homeTeamId == null || match.awayTeamId == null) continue;
+    // Un partido que ya empezó no se puede predecir/editar, aunque la fase
+    // siga abierta (p. ej. una fase reabierta para alguien atrasado).
+    if (new Date(match.kickoff).getTime() <= now) continue;
     const homeGoals = asGoals(p.homeGoals);
     const awayGoals = asGoals(p.awayGoals);
     if (homeGoals === null || awayGoals === null) continue;
