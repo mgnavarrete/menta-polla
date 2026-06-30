@@ -136,7 +136,9 @@ export default function MatchCard({
         ? "ring-2 ring-amber-300"
         : outcomeHit
           ? "ring-2 ring-emerald-300"
-          : "ring-1 ring-red-200"
+          : mp.points > 0
+            ? "ring-2 ring-sky-300"
+            : "ring-1 ring-red-200"
       : "";
 
   // resultado real por equipo (para resaltar al ganador)
@@ -334,6 +336,14 @@ function PredStrip({
       badge = (
         <span className="text-[11px] font-bold uppercase tracking-wide">
           ✓ Acertaste · +{points}
+        </span>
+      );
+    } else if (points > 0) {
+      // Falló marcador y resultado, pero acertó quién avanza (bono).
+      tone = "bg-sky-50 ring-1 ring-sky-300 text-sky-800";
+      badge = (
+        <span className="text-[11px] font-bold uppercase tracking-wide">
+          🏆 Avanza · +{points}
         </span>
       );
     } else {

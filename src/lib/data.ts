@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "./db";
 import { PHASES, PHASE_LABEL, groupStandings } from "./bracket";
+import { dayKey, todayKey } from "./dates";
 
 export type TeamView = {
   id: number;
@@ -69,10 +70,14 @@ export async function getMatchViews(
   });
 
   const now = Date.now();
+  const today = todayKey();
   return matches.map((m) => {
     const locked = new Date(m.kickoff).getTime() <= now;
+    // Las predicciones del resto se revelan al empezar el partido O si el
+    // partido es HOY (mismo día), aunque aún no sea la hora del pitazo.
+    const reveal = locked || dayKey(m.kickoff.toISOString()) === today;
     const mine = m.predictions.find((p) => p.userId === userId) ?? null;
-    const others = locked
+    const others = reveal
       ? m.predictions
           .filter((p) => p.userId !== userId)
           .map((p) => ({
